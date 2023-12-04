@@ -1,0 +1,40 @@
+// Monitoreo de la calidad del agua utilizando 
+// el Índice de diferencia normalizada de clorofila (NDCI)
+
+Map.addLayer(ROI)
+Map.centerObject(ROI,13)
+
+var IMG = ee.ImageCollection("COPERNICUS/S2_SR")
+          .filterBounds(ROI)
+          .filterDate('2021-01-01', '2021-12-31')
+          .sort('CLOUDY_PIXEL_PERCENTAGE', true)
+          .first()
+          .clip(ROI)
+
+Map.addLayer(IMG, imageVisParam, 'true color')
+
+// NDW = g -nir/g+nir
+
+var ndwi_f = function (img) {
+  var ndwi = img.normalizedDifference(['B3', 'B8']).rename('NDWI')
+  
+  return img.addBands(ndwi)
+  .updateMask(ndwi.gt(0))
+}
+
+
+
+
+var IMG_water = ndwi_f(IMG)
+
+Map.addLayer(IMG_water.select('NDWI'), {palette:['blue']}, 'IMG_WATER')
+
+
+var ndci_f = function(img){
+  var ndci = img.normalizedDifference(['B5','B4']).rename('NDCI')
+  return img.addBands(ndci)
+}
+
+var ndci_img = ndci_f(IMG_water)
+
+Map.addLayer(ndci_img.select('NDCI'), {min:0.1, max: 0.4, palette:['cyan','orange','red']},'NDCI')
