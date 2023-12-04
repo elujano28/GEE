@@ -1,0 +1,51 @@
+// Declarar y mostrar variables
+
+// Declarar variables
+// Las variables se declaran usando la palabra clave var 
+// seguida del nombre de la variable y el valor asignado. 
+// En este caso, las variables se declaran de la siguiente manera:
+
+// - variable: Una variable numérica asignada al valor 1.
+// - string: Una variable de cadena asignada al valor "Hola, mundo".
+// - list: Una variable de lista asignada a una lista de números: [1.23, 8, -3].
+// - dictionary: Una variable de diccionario asignada a un diccionario 
+//   que contiene pares clave-valor: {"a": "Hola", "b": 10, "c": 0.1343, "d": list}. La clave "d" hace referencia a la variable "list".
+
+var variable = 1;
+var string = 'Hola, mundo'
+var list = [1.23, 8, -3]
+var dictionary ={
+  'a': 'Hola',
+  'b': 10,
+  'c': 0.1343,
+  'd': list
+}
+
+// Mostrar variables
+
+// La función print() se utiliza para mostrar los valores de las variables
+// en la consola. En este caso, la función se utiliza para mostrar los 
+// valores de las cuatro variables declaradas anteriormente.
+
+// Salida
+
+// La salida del código es la siguiente:
+
+print(variable, string, list, dictionary)
+
+
+// Operadores en JavaScript
+// Los operadores son símbolos que se utilizan para realizar operaciones 
+// matemáticas, lógicas o de comparación.
+
+var a = 1;
+var b = 2;
+
+var suma = a + b; // 3
+var resta = a - b; // -1
+var multiplicacion = a * b; // 2
+var division = a / b; // 0.5
+
+// Este código declara dos variables, a y b, y luego utiliza 
+// operadores matemáticos para realizar diferentes operaciones con ellas. 
+// La salida del código es la siguiente:
