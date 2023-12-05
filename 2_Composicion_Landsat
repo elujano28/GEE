@@ -1,3 +1,5 @@
+// Requiere lugar de estudio: punto, linea o poligono
+
 // recupera imágenes satelitales de Landsat 8 Nivel 1 Terrain Corrected (L1T)
 // para el rango de fechas y área geográfica especificado.
 
@@ -10,6 +12,8 @@
 // 3) Luego filtra la colección landsat para incluir solo imágenes que 
 // intersectan un área geográfica especificada definida por el objeto 
 // geometry.
+
+// Imagen LandSat: https://developers.google.com/earth-engine/reference/Concepts
 
 var landsat = ee.ImageCollection("LANDSAT/LC8_L1T")
     .filterDate('2016-01-01','2017-01-01')
