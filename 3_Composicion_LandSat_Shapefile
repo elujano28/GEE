@@ -1,0 +1,64 @@
+// Requiere importar area de estudio desde la nube: shapefile
+
+// 1) Recupera un activo (Assets) guardados en la nube
+// 2) Centra el mapa en el área geográfica especificada geometry y establece el nivel de zoom en 8.
+
+Map.addLayer(Geometry)
+Map.centerObject(Geometry, 8)
+
+// recupera imágenes satelitales de Landsat 8 Nivel 1 Terrain Corrected (L1T)
+// para el rango de fechas y área geográfica especificado .
+
+// 1) La primera línea crea un objeto ImageCollection llamado landsat que 
+// contiene todas las imágenes Landsat 8 L1T
+
+// 2) La siguiente línea filtra la colección landsat para incluir solo 
+// imágenes adquiridas entre el 1 de enero de 2016 y el 1 de enero de 2017.
+
+// 3) Luego filtra la colección landsat para incluir solo imágenes que 
+// intersectan un área geográfica especificada definida por el objeto 
+// geometry.
+
+// 4) la función map itera sobre cada imagen de la colección y la recorta 
+// individualmente con la geometría definida. 
+// El resultado será una nueva colección de imágenes recortadas.
+
+// Imagen LandSat: https://developers.google.com/earth-engine/reference/Concepts
+
+var landsat = ee.ImageCollection("LANDSAT/LC8_L1T")
+  .filterDate('2016-01-01','2017-01-01')
+  .filterBounds(Geometry)
+  .map(function(image) {
+    return image.clip(Geometry);
+  });
+
+// Generación de una imagen compuesta a partir de las imágenes Landsat 8 filtradas.
+
+// 1) Esta línea crea una variable composite para almacenar la imagen compuesta generada.
+// 2) Esta propiedad especifica la colección landsat como la entrada para la operación de composición.
+// 3) Esta propiedad indica que la imagen compuesta debe generarse utilizando tipos de datos de punto flotante.
+
+var composite = ee.Algorithms.Landsat.simpleComposite({
+  collection: landsat,
+  asFloat: true
+})
+
+// Mostrando la imagen compuesta en el mapa de GGE, centrada en el área geográfica especificada
+
+// 1) Esta línea agrega la imagen composite al mapa de Google Earth Engine con una combinación de 
+// bandas especificada ([B4, B3, B2]) y parámetros de visualización (valor mínimo = 0, valor máximo = 0.3) 
+// para una representación en color natural ("RGB").
+// 2) Esta línea centra el mapa en el área geográfica especificada geometry y establece el nivel de zoom en 11.
+
+Map.addLayer(composite, {bands: ["B4","B3","B2"], min:0, max:0.3}, "RGB")
+Map.centerObject(Geometry, 8)
+
+// En resumen, el código realiza las siguientes tareas:
+
+// 1) Recupera un activo guardados en la nube
+
+// 2) Recupera imágenes satelitales de Landsat 8 para un rango de fechas y área geográfica especificados por un shapefile.
+
+// 3) Genera una imagen compuesta a partir de las imágenes Landsat 8 filtradas.
+
+// 4) Muestra la imagen compuesta en el mapa de Google Earth Engine.
