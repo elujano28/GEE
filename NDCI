@@ -38,7 +38,7 @@ Map.addLayer(IMG, imageVisParam, 'true color')
 // Dentro de la función, calculamos el NDWI como la diferencia normalizada entre las bandas B3 (verde) y B8 (infrarrojo cercano).
 // Renombramos la banda resultante como 'NDWI'.
 // Agregamos la banda NDWI a la imagen original.
-// Actualizamos la máscara de la imagen para excluir valores de NDWI inferiores a -1 (que podrían corresponder a nubes o sombras).
+// Actualizamos la máscara de la imagen para excluir valores de NDWI inferiores a -1 (que podrían corresponder a nubes o sombras) o 0 (valores negativos zonas no acuaticas).
 // Devuelve la imagen con la nueva banda NDWI y máscara actualizada.
 // Aplicamos la función ndwi_f a la imagen original, generando una nueva imagen con la banda NDWI.
 // Agregamos al mapa la banda NDWI con una paleta azul para representar el agua.
