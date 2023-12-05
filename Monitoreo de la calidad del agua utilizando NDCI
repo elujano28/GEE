@@ -1,6 +1,19 @@
 // Monitoreo de la calidad del agua utilizando 
 // el Índice de diferencia normalizada de clorofila (NDCI)
 
+// Requiere importar area de estudio desde la nube: shapefile
+// Ejm: var ROI: Polygon, 15 vertices
+// var imageVisParam: B4, B3 and B2 from 47.62 to 2285.38
+
+// 1. Preparación:
+
+// Cargar la región de interés (ROI)
+// Colocar en el centro del mapa con un zoom de 13.
+// Definimos la colección de imágenes Sentinel-2 SR, filtramos con ROI, fechas, y ordenamos por porcentaje de nubes (eligiendo la imagen menos nublada).
+// Recortas la imagen al ROI
+// Muestra la fecha de la imagen seleccionada
+// Agregamos al mapa con una visualización en color verdadero.
+
 Map.addLayer(ROI)
 Map.centerObject(ROI,13)
 
@@ -11,24 +24,46 @@ var IMG = ee.ImageCollection("COPERNICUS/S2_SR")
           .first()
           .clip(ROI)
 
+var date = IMG.date()
+
 Map.addLayer(IMG, imageVisParam, 'true color')
 
-// NDW = g -nir/g+nir
+// 2. Cálculo del NDWI:
+// NDW = G -NIR/G+NIR
+
+// Lista de índices espectrales en Sentinel 2 y Landsat
+// https://acolita.com/lista-de-indices-espectrales-en-sentinel-2-y-landsat/
+
+// Creamos una función ndwi_f que recibe una imagen como argumento.
+// Dentro de la función, calculamos el NDWI como la diferencia normalizada entre las bandas B3 (verde) y B8 (infrarrojo cercano).
+// Renombramos la banda resultante como 'NDWI'.
+// Agregamos la banda NDWI a la imagen original.
+// Actualizamos la máscara de la imagen para excluir valores de NDWI inferiores a -1 (que podrían corresponder a nubes o sombras).
+// Devuelve la imagen con la nueva banda NDWI y máscara actualizada.
+// Aplicamos la función ndwi_f a la imagen original, generando una nueva imagen con la banda NDWI.
+// Agregamos al mapa la banda NDWI con una paleta azul para representar el agua.
 
 var ndwi_f = function (img) {
   var ndwi = img.normalizedDifference(['B3', 'B8']).rename('NDWI')
-  
   return img.addBands(ndwi)
   .updateMask(ndwi.gt(0))
 }
-
-
-
 
 var IMG_water = ndwi_f(IMG)
 
 Map.addLayer(IMG_water.select('NDWI'), {palette:['blue']}, 'IMG_WATER')
 
+
+// 3. Cálculo del NDCI:
+
+// NDCI = B5 -B4/B5+B4
+
+// https://custom-scripts.sentinel-hub.com/custom-scripts/sentinel-2/ndci/
+
+// Creamos una función ndci_f similar a la de NDWI, pero usando las bandas B5 y B4 para el cálculo del NCDI.
+// Aplicamos la función ndci_f a la imagen con NDWI (IMG_water).
+// Agregamos al mapa la banda NCDI con una paleta graduada de cian a naranja y rojo, reflejando la concentración de clorofila.
+// Establecemos un rango mínimo y máximo para la visualización del NCDI.
 
 var ndci_f = function(img){
   var ndci = img.normalizedDifference(['B5','B4']).rename('NDCI')
@@ -38,3 +73,20 @@ var ndci_f = function(img){
 var ndci_img = ndci_f(IMG_water)
 
 Map.addLayer(ndci_img.select('NDCI'), {min:0.1, max: 0.4, palette:['cyan','orange','red']},'NDCI')
+
+// En el código utiliza min: 0.1 y max: 0.4 en la visualización del NCDI por dos motivos principales:
+
+// 1. Optimización del contraste:
+
+// El NCDI teóricamente puede oscilar entre -1 y 1, pero en la práctica, los valores reales suelen estar dentro de un rango más estrecho.
+// Al establecer un mínimo de 0.1 y un máximo de 0.4, se excluyen los valores extremos poco comunes y se enfoca la visualización en el rango relevante para la concentración de clorofila.
+// Esto permite una mejor diferenciación de las variaciones sutiles dentro del rango que son importantes para detectar cambios en la calidad del agua.
+
+// 2. Interpretación intuitiva de la paleta de colores:
+
+// La paleta de colores utilizada (cyan-naranja-rojo) representa la concentración de clorofila de forma intuitiva:
+// Cyan: baja concentración (agua limpia)
+// Naranja: concentración moderada (posible presencia de algas)
+// Rojo: alta concentración (proliferación algal potencialmente nociva)
+// Al establecer el mínimo en 0.1, se asegura que el cyan se asocie a valores de NCDI bajos (agua limpia) y no se desperdicie en valores irrelevantes.
+// Del mismo modo, el máximo de 0.4 garantiza que el rojo se use para concentraciones de clorofila realmente altas (potencialmente nocivas) y no se active en zonas con valores moderados.
