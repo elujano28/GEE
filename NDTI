@@ -1,0 +1,100 @@
+// Monitoreo de la calidad del agua utilizando 
+// el Índice de diferencia normalizada de turbidez (NDTI)
+
+// El NDTI se utiliza comúnmente como un indicador de la turbidez del agua, ya que puede captar 
+// cambios en la concentración de partículas en suspensión.
+// La turbidez del agua puede estar influenciada por diversos factores, como sedimentos, materia orgánica 
+// y otros contaminantes.
+
+// Requiere importar area de estudio desde la nube: shapefile
+// Ejm: var ROI: Polygon, 15 vertices
+// var imageVisParam: B4, B3 and B2 from 58.4 to 2285.6
+
+// 1. Preparación:
+
+// Cargar la región de interés (ROI)
+// Colocar en el centro del mapa con un zoom de 13.
+// Definimos la colección de imágenes Sentinel-2 SR, filtramos con ROI, fechas, y ordenamos por porcentaje de nubes (eligiendo la imagen menos nublada).
+// Recortas la imagen al ROI
+// Muestra la fecha de la imagen seleccionada
+// Agregamos al mapa con una visualización en color verdadero.
+
+Map.addLayer(ROI)
+Map.centerObject(ROI,13)
+
+var IMG = ee.ImageCollection("COPERNICUS/S2_SR")
+          .filterBounds(ROI)
+          .filterDate('2020-01-01', '2020-12-31')
+          .sort('CLOUDY_PIXEL_PERCENTAGE', true)
+          .first()
+          .clip(ROI)
+
+var date = IMG.date()
+
+Map.addLayer(IMG, imageVisParam, 'true color')
+
+// 2. Cálculo del NDWI:
+// NDW = G -NIR/G+NIR
+
+// Lista de índices espectrales en Sentinel 2 y Landsat
+// https://acolita.com/lista-de-indices-espectrales-en-sentinel-2-y-landsat/
+
+// Creamos una función ndwi_f que recibe una imagen como argumento.
+// Dentro de la función, calculamos el NDWI como la diferencia normalizada entre las bandas B3 (verde) y B8 (infrarrojo cercano).
+// Renombramos la banda resultante como 'NDWI'.
+// Agregamos la banda NDWI a la imagen original.
+// Actualizamos la máscara de la imagen para excluir valores de NDWI inferiores a -1 (que podrían corresponder a nubes o sombras) o 0 (valores negativos zonas no acuaticas).
+// Devuelve la imagen con la nueva banda NDWI y máscara actualizada.
+// Aplicamos la función ndwi_f a la imagen original, generando una nueva imagen con la banda NDWI.
+// Agregamos al mapa la banda NDWI con una paleta azul para representar el agua.
+
+var ndwi_f = function (img) {
+  var ndwi = img.normalizedDifference(['B3', 'B8']).rename('NDWI')
+  return img.addBands(ndwi)
+  .updateMask(ndwi.gt(0))
+}
+
+var IMG_water = ndwi_f(IMG)
+
+Map.addLayer(IMG_water.select('NDWI'), {palette:['blue']}, 'IMG_WATER')
+
+
+// 3. Cálculo del NDTI:
+
+// NDTI = B4 -B3/B4+B3
+
+// 
+
+// Creamos una función ndti_f similar a la de NDWI, pero usando las bandas B4 y B3 para el cálculo del NDTI.
+// Aplicamos la función ndti_f a la imagen con NDWI (IMG_water).
+// Agregamos al mapa la banda NDTI con una paleta graduada de cian a naranja y rojo, reflejando la concentración de turbidez.
+// Establecemos un rango mínimo y máximo para la visualización del NDTI.
+
+var ndti_f = function(img){
+  var ndti = img.normalizedDifference(['B4','B3']).rename('NDTI')
+  return img.addBands(ndti)
+}
+
+var ndti_img = ndti_f(IMG_water)
+
+Map.addLayer(ndti_img.select('NDTI'), {min:-0.6, max: 0, palette:['cyan','orange','red']},'NDTI')
+
+// En el código utiliza min: -0.6 y max: 0.1 en la visualización del NDTI por dos motivos principales:
+
+// 1. Optimización del contraste:
+
+// El NDTI teóricamente puede oscilar entre -1 y 1, pero en la práctica, los valores reales suelen estar dentro de un rango más estrecho.
+// Al establecer un mínimo de 0.1 y un máximo de 0.4, se excluyen los valores extremos poco comunes y se enfoca la visualización en el rango relevante para la concentración de clorofila.
+// Esto permite una mejor diferenciación de las variaciones sutiles dentro del rango que son importantes para detectar cambios en la calidad del agua.
+
+// 2. Interpretación intuitiva de la paleta de colores:
+
+// La paleta de colores utilizada (cyan-naranja-rojo) se utiliza para visualizar el Índice de Turbidez Normalizada (NDTI) en el mapa:
+// Cyan (cian): Zonas con baja turbidez. 
+// El agua clara y poco turbia tiende a mostrar valores más altos de NDTI, que se asignan al color cian en tu paleta.
+// Orange (naranja): Zonas con turbidez moderada. 
+// Las áreas con concentraciones moderadas de partículas en suspensión pueden aparecer en tonos de naranja.
+// Red (rojo): Zonas con alta turbidez. 
+// Las áreas con alta concentración de sedimentos y mayor turbidez se asignan al color rojo en la paleta.
+
+// Las áreas más claras (cian) indicarían agua más clara, mientras que las áreas más oscuras (rojo) indicarían mayor turbidez.
